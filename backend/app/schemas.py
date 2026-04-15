@@ -3,9 +3,9 @@ from typing import List, Optional, Union
 
 class ContentItem(BaseModel):
     id: int
-    type: str  # 'text', 'image', 'audio', 'video', 'youtube'
+    type: str
     title: str
-    value: str  # URL or text content
+    value: str
     thumbnail: Optional[str] = None
 
 class HighlightMetadata(BaseModel):
@@ -16,7 +16,7 @@ class HighlightMetadata(BaseModel):
 class Article(BaseModel):
     id: int
     title: str
-    content: str  # Text with placeholders for highlights
+    content: str
     highlights: List[HighlightMetadata]
 
 class AccordionItem(BaseModel):

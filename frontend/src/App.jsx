@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { fetchContent, fetchArticle, fetchExpandable } from "./utils/api";
-import { FaChevronDown } from "react-icons/fa";
 import InteractiveCard from "./components/InteractiveCard";
+import HighlightedTerm from "./components/HighlightedTerm";
+import Accordion from "./components/Accordion";
 import Modal from "./components/Modal";
 
 const App = () => {
@@ -12,6 +13,7 @@ const App = () => {
 
   const [selectedContent, setSelectedContent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [openAccordion, setOpenAccordion] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -36,6 +38,43 @@ const App = () => {
   const handleCardClick = (item) => {
     setSelectedContent(item);
     setIsModalOpen(true);
+  };
+
+  const handleTermClick = (term) => {
+    const highlight = article.highlights.find(h => h.term === term);
+    if (highlight) {
+      setSelectedContent({
+        type: 'text',
+        title: `শব্দকোষ: ${term}`,
+        value: highlight.description
+      });
+      setIsModalOpen(true);
+    }
+  };
+
+  const renderArticleContent = (content) => {
+    if (!content) return null;
+    
+    // Split by <span> tags
+    const parts = content.split(/(<span>.*?<\/span>)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('<span>') && part.endsWith('</span>')) {
+        const term = part.substring(6, part.length - 7);
+        return (
+          <HighlightedTerm 
+            key={index} 
+            term={term} 
+            onClick={() => handleTermClick(term)} 
+          />
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
+  const toggleAccordion = (key) => {
+    setOpenAccordion(openAccordion === key ? null : key);
   };
 
   if (loading) {
@@ -82,14 +121,13 @@ const App = () => {
             <h2 className="text-2xl font-semibold text-blue-900 mb-6 border-b-2 border-blue-100 pb-2">
               News Article with Interactive Elements
             </h2>
-            <div className="prose max-w-none text-gray-800 leading-relaxed">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">
+            <div className="prose max-w-none text-gray-800 leading-relaxed bg-blue-50/30 p-6 rounded-lg border border-blue-100">
+              <h3 className="text-2xl font-bold mb-4 text-gray-900">
                 {article?.title}
               </h3>
-              <div
-                className="article-content"
-                dangerouslySetInnerHTML={{ __html: article?.content }}
-              />
+              <div className="text-lg text-gray-700 leading-loose">
+                {renderArticleContent(article?.content)}
+              </div>
             </div>
           </section>
         </div>
@@ -99,18 +137,16 @@ const App = () => {
           <h2 className="text-2xl font-semibold text-blue-900 mb-6 border-b-2 border-blue-100 pb-2">
             Expandable Content
           </h2>
-          <div className="space-y-3">
+          <div className="space-y-1">
             {expandable &&
               Object.entries(expandable).map(([key, item]) => (
-                <div
+                <Accordion 
                   key={key}
-                  className="border border-gray-200 rounded-lg overflow-hidden"
-                >
-                  <button className="w-full flex items-center justify-between p-4 bg-indigo-900 text-white hover:bg-indigo-800 transition-colors">
-                    <span className="font-medium">{item.title}</span>
-                    <FaChevronDown size={16} />
-                  </button>
-                </div>
+                  title={item.title}
+                  content={item.content}
+                  isOpen={openAccordion === key}
+                  onToggle={() => toggleAccordion(key)}
+                />
               ))}
           </div>
         </div>
@@ -122,18 +158,6 @@ const App = () => {
         onClose={() => setIsModalOpen(false)}
         content={selectedContent}
       />
-
-      <style>{`
-        .article-content span {
-          color: #dc2626;
-          font-weight: 600;
-          cursor: pointer;
-          border-bottom: 1px dashed #dc2626;
-        }
-        .article-content span:hover {
-          background-color: #fee2e2;
-        }
-      `}</style>
     </div>
   );
 };
